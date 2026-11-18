@@ -37,12 +37,12 @@ let margin=60;
 let gap = 8;
 let grid = []
 
-let h1= 180; //bold weight, -3 letterspacing
-let h2 = 90; //bold weight, -3 letterspacing
-let h3= 60; //bold or reg weight, -3 letterspacing
-let h4=30; //bold or reg weight, -1 letterspacing
-let h5=18; //bold weight
-let h6=12; //bold weight
+let h1= {font:'fonts/OverusedGrotesk-Bold.otf', size:180} //bold weight, -3 letterspacing
+let h2 = {font:'fonts/OverusedGrotesk-Bold.otf',size:90}; //bold weight, -3 letterspacing
+let h3= {font:'fonts/OverusedGrotesk-Bold.otf',size:60}; //bold or reg weight, -3 letterspacing
+let h4={font:'fonts/OverusedGrotesk-Regular.otf',size:30}; //bold or reg weight, -1 letterspacing
+let h5={font:'fonts/OverusedGrotesk-Bold.otf',size:18}; //bold weight
+let h6={font:'fonts/OverusedGrotesk-Regular.otf',size:12}; //bold weight
 
 /* QUOTESTUFF
 All text should always be aligned to the bottom of a grid cell and left aligned to the edge of a grid cell EXCEPT FOR atriclecopy and quoteAttrib which are aligned to the TOP of row 13.
@@ -54,10 +54,10 @@ Rows are divided into 4 sections, the first 3 sections are 4 rows each and conta
 
 let quoteSect1="the price of";
 let quoteSect2="eternal vigilance is";
-let quoteSect3="indifference"
-let quoteAttrib="—Marshall McLuhan" //always h3 and in bottom 2 rows
-let articleHeader="Article 12" //always h4 and directly above articleCopy in bottom two rows
-let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation." //always h5 3 cols wide and in bottom two rows
+let quoteSect3="indifference";
+let quoteAttrib="—Marshall McLuhan"; //always h3 and in bottom 2 rows
+let articleHeader="Article 12"; //always h4 and directly above articleCopy in bottom two rows
+let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h5 3 cols wide and in bottom two rows
 
 /*SHAPES
 Data defines the total surface area the shapes can cover between a min and a max cycled by the variable described above. Shapes can overlap each other and are randomly set to be gray or the accentColor. The positioning of shapes ALWAYS begins at the EDGE of the canvas and shape edges always align to cell edges (except for at the border of the canvas where they should always bleed off the page across the margin).
@@ -76,6 +76,12 @@ function parseCookies(json){
 */
 
 
+function preload() {
+  let headings = [h1,h2,h3,h4,h5,h6];
+  for(let i=0; i<headings.length; i++){
+    loadFont(headings[i].font);
+  }
+}
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
@@ -83,6 +89,7 @@ function setup() {
 
 function draw() {
   background(220);
+  main();
 }
 
 
@@ -101,11 +108,39 @@ function createGrid (r,c){
   return grid;
 }
 
+function drawTrackedText(str, x, y, config) {
+  push();
+  textSize(config.size);
+  
+  let currentX = x;
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    text(char, currentX, y);
+    currentX += textWidth(char) + config.letterspacing;
+  }
+  pop();
+}
+
 
 function main() {
   createGrid(rows,cols);
+
   let gridWidth = canvasWidth-margin;
   let gridHeight = canvasHeight-margin;
-  let cellW = gridWidth/cols-(cols*gap-1);
-  let cellH = gridHeight/rows-(rows*gap-1);
+  let cellW = (gridWidth-((cols-1)*gap))/cols;
+  let cellH = (gridHeight-((rows-1)*gap))/rows;
+  
+  /* Grid cells test
+  fill('black');
+  for(let i = 0; i<rows; ++i){
+    for(let j=0; j<cols; ++j){
+      rect(
+        ((margin/2)+(j*cellW)+(j*gap)),
+        ((margin/2)+(i*cellH)+(i*gap)),
+        cellW,
+        cellH
+      )
+    }
+  }
+  */
 }
