@@ -37,12 +37,12 @@ let margin=60;
 let gap = 8;
 let grid = []
 
-let h1= {font:'fonts/OverusedGrotesk-Bold.otf', size:180} //bold weight, -3 letterspacing
-let h2 = {font:'fonts/OverusedGrotesk-Bold.otf',size:90}; //bold weight, -3 letterspacing
-let h3= {font:'fonts/OverusedGrotesk-Bold.otf',size:60}; //bold or reg weight, -3 letterspacing
-let h4={font:'fonts/OverusedGrotesk-Regular.otf',size:30}; //bold or reg weight, -1 letterspacing
-let h5={font:'fonts/OverusedGrotesk-Bold.otf',size:18}; //bold weight
-let h6={font:'fonts/OverusedGrotesk-Regular.otf',size:12}; //bold weight
+let h1= {font:'fonts/OverusedGrotesk-Bold.otf', size:180, letterspacing: -9} //bold weight, -3 letterspacing
+let h2 = {font:'fonts/OverusedGrotesk-Bold.otf',size:90, letterspacing: -4}; //bold weight, -3 letterspacing
+let h3= {font:'fonts/OverusedGrotesk-Bold.otf',size:60, letterspacing: -3}; //bold or reg weight, -3 letterspacing
+let h4={font:'fonts/OverusedGrotesk-Regular.otf',size:30, letterspacing: -1}; //bold or reg weight, -1 letterspacing
+let h5={font:'fonts/OverusedGrotesk-Bold.otf',size:18, letterspacing: 0}; //bold weight
+let h6={font:'fonts/OverusedGrotesk-Regular.otf',size:12, letterspacing: 0}; //bold weight
 
 /* QUOTESTUFF
 All text should always be aligned to the bottom of a grid cell and left aligned to the edge of a grid cell EXCEPT FOR atriclecopy and quoteAttrib which are aligned to the TOP of row 13.
@@ -78,44 +78,59 @@ function parseCookies(json){
 
 function preload() {
   let headings = [h1,h2,h3,h4,h5,h6];
-  for(let i=0; i<headings.length; i++){
-    loadFont(headings[i].font);
+  for(let heading of headings){
+    heading.font=loadFont(heading.font);
   }
 }
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
+  textFont('Overused Grotesk');
+
 }
 
 function draw() {
   background(220);
   main();
+  noLoop()
 }
 
 
 function createGrid (r,c){
   let grid=[];
+
+  let gridWidth = canvasWidth-margin;
+  let gridHeight = canvasHeight-margin;
+  let cellW = (gridWidth-((cols-1)*gap))/cols;
+  let cellH = (gridHeight-((rows-1)*gap))/rows;
+
   for(let i = 0; i<r; ++i){
     let currentRow = [];
     for (let j = 0; j<c; ++j){
       currentRow[j]={
         filled: false,
-        text: null
+        text: null,
+        cellTL: [((margin/2)+(j*cellW)+(j*gap)),((margin/2)+(i*cellH)+(i*gap))],
+        cellBL: [((margin/2)+(j*cellW)+(j*gap)),((margin/2)+(i*cellH)+(i*gap))+cellH],
+        cellTR: [((margin/2)+(j*cellW)+(j*gap))+cellW,((margin/2)+(i*cellH)+(i*gap))],
+        cellBR: [((margin/2)+(j*cellW)+(j*gap))+cellW,((margin/2)+(i*cellH)+(i*gap))+cellH]
+
       }
     }
     grid.push(currentRow);
   }
+  console.log(grid);
   return grid;
 }
 
-function drawTrackedText(str, x, y, config) {
+function drawTrackedText(str, row, col, config) {
   push();
   textSize(config.size);
-  
-  let currentX = x;
+  textFont(config.font);
+  let currentX = grid[row][col].cellBL[0];
   for (let i = 0; i < str.length; i++) {
     let char = str[i];
-    text(char, currentX, y);
+    text(char, currentX, grid[row][col].cellBL[1]);
     currentX += textWidth(char) + config.letterspacing;
   }
   pop();
@@ -123,17 +138,17 @@ function drawTrackedText(str, x, y, config) {
 
 
 function main() {
-  createGrid(rows,cols);
+  grid=createGrid(rows,cols);
 
-  let gridWidth = canvasWidth-margin;
-  let gridHeight = canvasHeight-margin;
-  let cellW = (gridWidth-((cols-1)*gap))/cols;
-  let cellH = (gridHeight-((rows-1)*gap))/rows;
+  fill('black');
+  drawTrackedText(quoteSect2,0,0,h2)
   
   /* Grid cells test
   fill('black');
   for(let i = 0; i<rows; ++i){
     for(let j=0; j<cols; ++j){
+
+    getCellPos()
       rect(
         ((margin/2)+(j*cellW)+(j*gap)),
         ((margin/2)+(i*cellH)+(i*gap)),
