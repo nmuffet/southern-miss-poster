@@ -35,14 +35,33 @@ let rows = 14;
 let cols = 8;
 let margin=60;
 let gap = 8;
-let grid = []
+let grid = [];
+let cellW = null;
+let cellH = null;
 
-let h1= {font:'fonts/OverusedGrotesk-Bold.otf', size:180, letterspacing: -9} //bold weight, -3 letterspacing
-let h2 = {font:'fonts/OverusedGrotesk-Bold.otf',size:90, letterspacing: -4}; //bold weight, -3 letterspacing
-let h3= {font:'fonts/OverusedGrotesk-Bold.otf',size:60, letterspacing: -3}; //bold or reg weight, -3 letterspacing
-let h4={font:'fonts/OverusedGrotesk-Regular.otf',size:30, letterspacing: -1}; //bold or reg weight, -1 letterspacing
-let h5={font:'fonts/OverusedGrotesk-Bold.otf',size:18, letterspacing: 0}; //bold weight
-let h6={font:'fonts/OverusedGrotesk-Regular.otf',size:12, letterspacing: 0}; //bold weight
+let h1= {font:'bold', size:180, letterspacing: -9} //bold weight, -3 letterspacing
+
+let h2 = {font:'bold',size:90, letterspacing: -4}; //bold weight, -3 letterspacing
+let h3= {font:((arr) => {return arr[Math.floor(Math.random()*arr.length)]
+})(['bold','regular']),size:60, letterspacing: -3}; //bold or reg weight, -3 letterspacing
+let h4={font:((arr) => {return arr[Math.floor(Math.random()*arr.length)]
+})(['bold','regular']),size:30, letterspacing: -1}; //bold or reg weight, -1 letterspacing
+let h5={font:'bold',size:18, letterspacing: 0}; //bold weight
+let h6={font:'regular',size:12, letterspacing: 0}; //bold weight
+let loadedFonts = {};
+
+let sizeMap = {
+  'h1':h1,
+  'h2':h2,
+  'h3':h3,
+  'h4':h4,
+  'h5':h5,
+  'h6':h6
+};
+
+function convertSize(size){
+  return sizeMap[size];
+}
 
 /* QUOTESTUFF
 All text should always be aligned to the bottom of a grid cell and left aligned to the edge of a grid cell EXCEPT FOR atriclecopy and quoteAttrib which are aligned to the TOP of row 13.
@@ -52,11 +71,11 @@ Quotes are randomly positioned horizontally but always fit within the margin unl
 Rows are divided into 4 sections, the first 3 sections are 4 rows each and contain the following text segments ["the price of", "eternal vigilance is", indifference]. The last section of 2 rows contains quoteAttribution and articleHeader/articleCopy
 */
 
-let quoteSect1="the price of";
-let quoteSect2="eternal vigilance is";
-let quoteSect3="indifference";
-let quoteAttrib="—Marshall McLuhan"; //always h3 and in bottom 2 rows
-let articleHeader="Article 12"; //always h4 and directly above articleCopy in bottom two rows
+let quoteSect1={rows:[0,1,2,3],text:[["the price of"],["the",'price','of'],['the price', 'of']],sizes:['h2','h3']};
+let quoteSect2={rows:[4,5,6,7],text:[["eternal vigilance is"],['eternal','vigilance','is'],['eternal','vigilance is'],['eter','nal','vigilance is','eter','nal','vigilance','is'],['eternal','vigi','lance','is']], sizes:['h1','h2','h3']};
+let quoteSect3={rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','difference'],['in','diff','erence']],sizes:['h1','h2','h3']};
+let quoteAttrib={rows:[12,13],text:["—Marshall McLuhan"],sizes:['h4']}; //always h4 and in bottom 2 rows
+let articleHeader="Article 12"; //always h5 and directly above articleCopy in bottom two rows
 let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h5 3 cols wide and in bottom two rows
 
 /*SHAPES
@@ -77,9 +96,20 @@ function parseCookies(json){
 
 
 function preload() {
-  let headings = [h1,h2,h3,h4,h5,h6];
-  for(let heading of headings){
-    heading.font=loadFont(heading.font);
+  let fontFiles = [
+    'OverusedGrotesk-Black.otf',
+    'OverusedGrotesk-Bold.otf',
+    'OverusedGrotesk-Book.otf',
+    'OverusedGrotesk-ExtraBold.otf',
+    'OverusedGrotesk-ExtraLight.otf',
+    'OverusedGrotesk-Light.otf',
+    'OverusedGrotesk-Medium.otf',
+    'OverusedGrotesk-Regular.otf',
+    'OverusedGrotesk-SemiBold.otf'
+  ];
+  for (let file of fontFiles) {
+    let name = file.replace('OverusedGrotesk-', '').replace('.otf', '').toLowerCase();
+    loadedFonts[name] = loadFont(`fonts/${file}`);
   }
 }
 
@@ -101,8 +131,8 @@ function createGrid (r,c){
 
   let gridWidth = canvasWidth-margin;
   let gridHeight = canvasHeight-margin;
-  let cellW = (gridWidth-((cols-1)*gap))/cols;
-  let cellH = (gridHeight-((rows-1)*gap))/rows;
+  cellW = (gridWidth-((cols-1)*gap))/cols;
+  cellH = (gridHeight-((rows-1)*gap))/rows;
 
   for(let i = 0; i<r; ++i){
     let currentRow = [];
@@ -126,22 +156,67 @@ function createGrid (r,c){
 function drawTrackedText(str, row, col, config) {
   push();
   textSize(config.size);
-  textFont(config.font);
+  textFont(loadedFonts[config.font]);
   let currentX = grid[row][col].cellBL[0];
   for (let i = 0; i < str.length; i++) {
     let char = str[i];
     text(char, currentX, grid[row][col].cellBL[1]);
     currentX += textWidth(char) + config.letterspacing;
   }
+  console.log(textWidth(str));
   pop();
+
+
+}
+
+function printQuote(quote){
+  //select # rows to print over
+  let rowSpan = Math.floor(Math.random()*3);
+  //depending on quote, run drawTrackedText on for randomly selected quote tokens and appropriate random cells
+
+  // get quote version
+  let quoteVersion = quote.text[Math.floor(Math.random()*quote.text.length)];
+  console.log(`'quoteVersion: ${quoteVersion}'`)
+
+  let printRow =0;
+  
+  for(let i=0;i<quoteVersion.length;i++){
+    push()
+    let size = quote.sizes[Math.floor(Math.random()*quote.sizes.length)];
+
+    size=convertSize(size);
+
+    textSize(size.size);
+    let textW = textWidth(quoteVersion[i]);
+
+    function chooseCol() {return Math.floor(Math.random()*cols)};
+
+    let startCol = chooseCol();
+
+    while (textW> ((cols-startCol)*cellW+(cols-startCol-1)*gap)){
+      startCol = chooseCol();
+    }
+
+    console.log(`quoteVersion:${quoteVersion} i:${i}`)
+    console.log(`quote.rows[printRow]:${quote.rows[printRow]}`);
+
+    drawTrackedText(quoteVersion[i],quote.rows[printRow], startCol, size);
+
+    if (size===h1){
+      printRow+=2;
+    } else{printRow+=1}
+    pop()
+  }
+
+
 }
 
 
 function main() {
   grid=createGrid(rows,cols);
-
   fill('black');
-  drawTrackedText(quoteSect2,0,0,h2)
+  printQuote(quoteSect1);
+
   
   /* Grid cells test
   fill('black');
