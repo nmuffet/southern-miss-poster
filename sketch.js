@@ -39,29 +39,27 @@ let grid = [];
 let cellW = null;
 let cellH = null;
 
-let h1= {font:'bold', size:180, letterspacing: -9} //bold weight, -3 letterspacing
+const TYPE_SPECS = {
+h1:{font:['bold'], size:180, letterspacing: -9}, //bold weight, -3 letterspacing
+h2: {font:['bold'],size:90, letterspacing: -4}, //bold weight, -3 letterspacing
+h3: {font:['bold','regular'],size:60, letterspacing: -3}, //bold or reg weight, -3 letterspacing
+h4: {font:['bold','regular'],size:30, letterspacing: -1}, //bold or reg weight, -1 letterspacing
+h5:{font:'bold',size:18, letterspacing: 0}, //bold weight
+h6: {font:'regular',size:12, letterspacing: 0} //bold weight
+}
 
-let h2 = {font:'bold',size:90, letterspacing: -4}; //bold weight, -3 letterspacing
-let h3= {font:((arr) => {return arr[Math.floor(Math.random()*arr.length)]
-})(['bold','regular']),size:60, letterspacing: -3}; //bold or reg weight, -3 letterspacing
-let h4={font:((arr) => {return arr[Math.floor(Math.random()*arr.length)]
-})(['bold','regular']),size:30, letterspacing: -1}; //bold or reg weight, -1 letterspacing
-let h5={font:'bold',size:18, letterspacing: 0}; //bold weight
-let h6={font:'regular',size:12, letterspacing: 0}; //bold weight
+function resolveTypeSpecs(h){
+  const heading = TYPE_SPECS[h];  
+  return {
+    font: heading.font[Math.floor(Math.random()*heading.font.length)],
+    size: heading.size ,
+    letterspacing: heading.letterspacing
+  }
+}
+
 let loadedFonts = {};
 
-let sizeMap = {
-  'h1':h1,
-  'h2':h2,
-  'h3':h3,
-  'h4':h4,
-  'h5':h5,
-  'h6':h6
-};
 
-function convertSize(size){
-  return sizeMap[size];
-}
 
 /* QUOTESTUFF
 All text should always be aligned to the bottom of a grid cell and left aligned to the edge of a grid cell EXCEPT FOR atriclecopy and quoteAttrib which are aligned to the TOP of row 13.
@@ -71,12 +69,15 @@ Quotes are randomly positioned horizontally but always fit within the margin unl
 Rows are divided into 4 sections, the first 3 sections are 4 rows each and contain the following text segments ["the price of", "eternal vigilance is", indifference]. The last section of 2 rows contains quoteAttribution and articleHeader/articleCopy
 */
 
-let quoteSect1={rows:[0,1,2,3],text:[["the price of"],["the",'price','of'],['the price', 'of']],sizes:['h2','h3']};
-let quoteSect2={rows:[4,5,6,7],text:[["eternal vigilance is"],['eternal','vigilance','is'],['eternal','vigilance is'],['eter','nal','vigilance is','eter','nal','vigilance','is'],['eternal','vigi','lance','is']], sizes:['h1','h2','h3']};
-let quoteSect3={rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','difference'],['in','diff','erence']],sizes:['h1','h2','h3']};
+const QUOTE_INFO = {
+quoteSect1:{rows:[0,1,2,3],text:[["the price of"],["the",'price','of'],['the price', 'of']],sizes:['h2','h3']},
+quoteSect2:{rows:[4,5,6,7],text:[["eternal vigilance is"],['eternal','vigilance','is'],['eternal','vigilance is'],['eter','nal','vigilance is'],['eter','nal','vigilance','is'],['eternal','vigi','lance','is']], sizes:['h1','h2','h3']},
+quoteSect3:{rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','difference'],['in','diff','erence']],sizes:['h1','h2','h3']}
+};
 let quoteAttrib={rows:[12,13],text:["—Marshall McLuhan"],sizes:['h4']}; //always h4 and in bottom 2 rows
 let articleHeader="Article 12"; //always h5 and directly above articleCopy in bottom two rows
 let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h5 3 cols wide and in bottom two rows
+
 
 /*SHAPES
 Data defines the total surface area the shapes can cover between a min and a max cycled by the variable described above. Shapes can overlap each other and are randomly set to be gray or the accentColor. The positioning of shapes ALWAYS begins at the EDGE of the canvas and shape edges always align to cell edges (except for at the border of the canvas where they should always bleed off the page across the margin).
@@ -153,8 +154,9 @@ function createGrid (r,c){
   return grid;
 }
 
-function drawTrackedText(str, row, col, config) {
+function drawTrackedText(str, row, col, h) {
   push();
+  const config = resolveTypeSpecs(h);
   textSize(config.size);
   textFont(loadedFonts[config.font]);
   let currentX = grid[row][col].cellBL[0];
@@ -174,35 +176,38 @@ function printQuote(quote){
   let rowSpan = Math.floor(Math.random()*3);
   //depending on quote, run drawTrackedText on for randomly selected quote tokens and appropriate random cells
 
+  let quoteInfo = QUOTE_INFO[quote];
+
   // get quote version
-  let quoteVersion = quote.text[Math.floor(Math.random()*quote.text.length)];
+  let quoteVersion = quoteInfo.text[Math.floor(Math.random()*quoteInfo.text.length)];
   console.log(`'quoteVersion: ${quoteVersion}'`)
 
   let printRow =0;
   
   for(let i=0;i<quoteVersion.length;i++){
     push()
-    let size = quote.sizes[Math.floor(Math.random()*quote.sizes.length)];
+    let size = quoteInfo.sizes[Math.floor(Math.random()*quoteInfo.sizes.length)];
 
-    size=convertSize(size);
-
-    textSize(size.size);
+    textSize(resolveTypeSpecs(size).size);
     let textW = textWidth(quoteVersion[i]);
 
     function chooseCol() {return Math.floor(Math.random()*cols)};
 
     let startCol = chooseCol();
+    let attempts = 0;
+    const maxAttempts = 100;
 
-    while (textW> ((cols-startCol)*cellW+(cols-startCol-1)*gap)){
+    while (textW> ((cols-startCol)*cellW+(cols-startCol-1)*gap) && attempts < maxAttempts){
       startCol = chooseCol();
+      attempts++;
     }
 
     console.log(`quoteVersion:${quoteVersion} i:${i}`)
-    console.log(`quote.rows[printRow]:${quote.rows[printRow]}`);
+    console.log(`quote.rows[printRow]:${quoteInfo.rows[printRow]}`);
 
-    drawTrackedText(quoteVersion[i],quote.rows[printRow], startCol, size);
+    drawTrackedText(quoteVersion[i],quoteInfo.rows[printRow], startCol, size);
 
-    if (size===h1){
+    if (size===TYPE_SPECS['h1'].size){
       printRow+=2;
     } else{printRow+=1}
     pop()
@@ -215,7 +220,11 @@ function printQuote(quote){
 function main() {
   grid=createGrid(rows,cols);
   fill('black');
-  printQuote(quoteSect1);
+  let quoteSects = ['quoteSect1','quoteSect2','quoteSect3'];
+  for (let i=0; i<quoteSects.length; i++){
+  
+  printQuote(quoteSects[i]);
+  }
 
   
   /* Grid cells test
