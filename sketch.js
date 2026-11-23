@@ -154,66 +154,106 @@ function createGrid (r,c){
   return grid;
 }
 
-function drawTrackedText(str, row, col, h) {
+function layoutTrackedText(str, row, col, size, config, sectionRows) {
   push();
-  const config = resolveTypeSpecs(h);
   textSize(config.size);
   textFont(loadedFonts[config.font]);
-  let currentX = grid[row][col].cellBL[0];
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    text(char, currentX, grid[row][col].cellBL[1]);
-    currentX += textWidth(char) + config.letterspacing;
+  let currentX = grid[sectionRows[row]][col].cellBL[0];
+  const glyphs = [];
+  const chars = Array.from(str);
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    const charWidth = textWidth(char);
+    const nextX = currentX + charWidth + config.letterspacing;
+
+    if (size !== 'h1' && currentX + charWidth > canvasWidth - margin / 2) {
+      pop();
+      return null;
+    }
+
+    glyphs.push({char, x: currentX, row});
+    if (size === 'h1' && currentX + charWidth > canvasWidth) {
+      row += 2;
+      if (row >= sectionRows.length) {
+        pop();
+        return null;
+      }
+      glyphs.push({char, x: currentX - canvasWidth, row});
+      currentX = nextX - canvasWidth;
+    } else if (size === 'h1' && nextX >= canvasWidth && i < chars.length - 1) {
+      row += 2;
+      if (row >= sectionRows.length) {
+        pop();
+        return null;
+      }
+      currentX = nextX - canvasWidth;
+    } else {
+      currentX = nextX;
+    }
   }
-  console.log(textWidth(str));
   pop();
 
+  return {config, glyphs, lastRow: row};
+}
 
+function drawTrackedText(layout, sectionRows) {
+  push();
+  textSize(layout.config.size);
+  textFont(loadedFonts[layout.config.font]);
+  for (const glyph of layout.glyphs) {
+    text(glyph.char, glyph.x, grid[sectionRows[glyph.row]][0].cellBL[1]);
+  }
+  pop();
+}
+
+function planQuote(tokens, quoteInfo, tokenIndex = 0, printRow = 0) {
+  if (tokenIndex === tokens.length) return [];
+
+  const candidates = [];
+  for (const size of quoteInfo.sizes) {
+    const spec = TYPE_SPECS[size];
+    const fonts = Array.isArray(spec.font) ? spec.font : [spec.font];
+    for (const font of fonts) {
+      const config = {font, size: spec.size, letterspacing: spec.letterspacing};
+      for (let col = 0; col < cols; col++) {
+        candidates.push({size, config, col});
+      }
+    }
+  }
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  for (const {size, config, col} of candidates) {
+    const firstRow = printRow + (size === 'h1' ? 1 : 0);
+    const remainingTokens = tokens.length - tokenIndex - 1;
+    if (firstRow + remainingTokens >= quoteInfo.rows.length) continue;
+
+    const layout = layoutTrackedText(
+      tokens[tokenIndex], firstRow, col, size, config, quoteInfo.rows
+    );
+    if (!layout || layout.lastRow + remainingTokens >= quoteInfo.rows.length) continue;
+
+    const rest = planQuote(tokens, quoteInfo, tokenIndex + 1, layout.lastRow + 1);
+    if (rest) return [layout, ...rest];
+  }
+  return null;
 }
 
 function printQuote(quote){
-  //select # rows to print over
-  let rowSpan = Math.floor(Math.random()*3);
-  //depending on quote, run drawTrackedText on for randomly selected quote tokens and appropriate random cells
+  const quoteInfo = QUOTE_INFO[quote];
+  const quoteVersion = quoteInfo.text[Math.floor(Math.random()*quoteInfo.text.length)];
+  const layouts = planQuote(quoteVersion, quoteInfo);
 
-  let quoteInfo = QUOTE_INFO[quote];
-
-  // get quote version
-  let quoteVersion = quoteInfo.text[Math.floor(Math.random()*quoteInfo.text.length)];
-  console.log(`'quoteVersion: ${quoteVersion}'`)
-
-  let printRow =0;
-  
-  for(let i=0;i<quoteVersion.length;i++){
-    push()
-    let size = quoteInfo.sizes[Math.floor(Math.random()*quoteInfo.sizes.length)];
-
-    textSize(resolveTypeSpecs(size).size);
-    let textW = textWidth(quoteVersion[i]);
-
-    function chooseCol() {return Math.floor(Math.random()*cols)};
-
-    let startCol = chooseCol();
-    let attempts = 0;
-    const maxAttempts = 100;
-
-    while (textW> ((cols-startCol)*cellW+(cols-startCol-1)*gap) && attempts < maxAttempts){
-      startCol = chooseCol();
-      attempts++;
-    }
-
-    console.log(`quoteVersion:${quoteVersion} i:${i}`)
-    console.log(`quote.rows[printRow]:${quoteInfo.rows[printRow]}`);
-
-    drawTrackedText(quoteVersion[i],quoteInfo.rows[printRow], startCol, size);
-
-    if (size===TYPE_SPECS['h1'].size){
-      printRow+=2;
-    } else{printRow+=1}
-    pop()
+  if (!layouts) {
+    throw new Error(`Quote ${quote} cannot fit in its assigned rows`);
   }
 
-
+  for (const layout of layouts) {
+    drawTrackedText(layout, quoteInfo.rows);
+  }
 }
 
 
@@ -227,19 +267,19 @@ function main() {
   }
 
   
-  /* Grid cells test
-  fill('black');
-  for(let i = 0; i<rows; ++i){
-    for(let j=0; j<cols; ++j){
 
-    getCellPos()
+  stroke('black');
+  noFill();
+  for(let i=0; i<rows; i++){
+    for(let j=0; j<cols; j++){
+
       rect(
-        ((margin/2)+(j*cellW)+(j*gap)),
-        ((margin/2)+(i*cellH)+(i*gap)),
+        grid[i][j].cellTL[0],
+        grid[i][j].cellTL[1],
         cellW,
         cellH
       )
     }
   }
-  */
+
 }
