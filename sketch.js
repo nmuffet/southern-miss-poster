@@ -44,14 +44,16 @@ h1:{font:['bold'], size:180, letterspacing: -9}, //bold weight, -3 letterspacing
 h2: {font:['bold'],size:90, letterspacing: -4}, //bold weight, -3 letterspacing
 h3: {font:['bold','regular'],size:60, letterspacing: -3}, //bold or reg weight, -3 letterspacing
 h4: {font:['bold','regular'],size:30, letterspacing: -1}, //bold or reg weight, -1 letterspacing
+h4a: {font:['regular'],size:30, letterspacing: -1}, //bold or reg weight, -1 letterspacing
 h5:{font:'bold',size:18, letterspacing: 0}, //bold weight
-h6: {font:'regular',size:12, letterspacing: 0} //bold weight
+h6: {font:'regular',size:12, letterspacing: 0}
 }
 
 function resolveTypeSpecs(h){
-  const heading = TYPE_SPECS[h];  
+  const heading = TYPE_SPECS[h];
+  const fonts = Array.isArray(heading.font) ? heading.font : [heading.font];
   return {
-    font: heading.font[Math.floor(Math.random()*heading.font.length)],
+    font: fonts[Math.floor(Math.random()*fonts.length)],
     size: heading.size ,
     letterspacing: heading.letterspacing
   }
@@ -72,11 +74,11 @@ Rows are divided into 4 sections, the first 3 sections are 4 rows each and conta
 const QUOTE_INFO = {
 quoteSect1:{rows:[0,1,2,3],text:[["the price of"],["the",'price','of'],['the price', 'of']],sizes:['h2','h3']},
 quoteSect2:{rows:[4,5,6,7],text:[["eternal vigilance is"],['eternal','vigilance','is'],['eternal','vigilance is'],['eter','nal','vigilance is'],['eter','nal','vigilance','is'],['eternal','vigi','lance','is']], sizes:['h1','h2','h3']},
-quoteSect3:{rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','difference'],['in','diff','erence']],sizes:['h1','h2','h3']}
+quoteSect3:{rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','difference']],sizes:['h1','h2','h3']}
 };
-let quoteAttrib={rows:[12,13],text:["—Marshall McLuhan"],sizes:['h4']}; //always h4 and in bottom 2 rows
+let quoteAttrib={rows:[12,13],text:["—Marshall McLuhan"],sizes:['h4a']}; //always h4 and in bottom 2 rows
 let articleHeader="Article 12"; //always h5 and directly above articleCopy in bottom two rows
-let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h5 3 cols wide and in bottom two rows
+let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h6 3 cols wide and in bottom two rows
 
 
 /*SHAPES
@@ -197,12 +199,14 @@ function layoutTrackedText(str, row, col, size, config, sectionRows) {
   return {config, glyphs, lastRow: row};
 }
 
-function drawTrackedText(layout, sectionRows) {
+function drawTrackedText(layout, sectionRows, topAligned = false) {
   push();
   textSize(layout.config.size);
   textFont(loadedFonts[layout.config.font]);
+  if (topAligned) textAlign(LEFT, TOP);
   for (const glyph of layout.glyphs) {
-    text(glyph.char, glyph.x, grid[sectionRows[glyph.row]][0].cellBL[1]);
+    const cell = grid[sectionRows[glyph.row]][0];
+    text(glyph.char, glyph.x, topAligned ? cell.cellTL[1] : cell.cellBL[1]);
   }
   pop();
 }
@@ -256,18 +260,38 @@ function printQuote(quote){
   }
 }
 
+function printFooter(attribution, header, copy) {
+  const attributionCol = Math.random() < 0.5 ? 0 : cols / 2;
+  const articleCol = attributionCol === 0 ? cols / 2 : 0;
+  const row = attribution.rows[0];
+  const attributionText = attribution.text[Math.floor(Math.random() * attribution.text.length)];
+  const attributionLayout = layoutTrackedText(
+    attributionText, 0, attributionCol, 'h4a', resolveTypeSpecs('h4a'), attribution.rows
+  );
+  if (!attributionLayout) throw new Error('Quote attribution cannot fit in the footer');
+  push();
+  translate(0, -cellH * 0.15);
+  drawTrackedText(attributionLayout, attribution.rows, true);
+  pop();
 
-function main() {
-  grid=createGrid(rows,cols);
-  fill('black');
-  let quoteSects = ['quoteSect1','quoteSect2','quoteSect3'];
-  for (let i=0; i<quoteSects.length; i++){
-  
-  printQuote(quoteSects[i]);
-  }
+  push();
+  const articleStyle = resolveTypeSpecs('h5');
+  textFont(loadedFonts[articleStyle.font]);
+  textSize(articleStyle.size);
+  textAlign(LEFT, TOP);
+  const [x, y] = grid[row][articleCol].cellTL;
+  text(header, x, y-(cellH*.1));
 
-  
+  const copyStyle = resolveTypeSpecs('h6');
+  textFont(loadedFonts[copyStyle.font]);
+  textSize(copyStyle.size);
+  textLeading(copyStyle.size * 1.25);
+  text(copy, x, y-(cellH*.1) + articleStyle.size * 1.25, 3 * cellW + 2 * gap);
+  pop();
+}
 
+ // viewgrid test
+ function viewGrid(){
   stroke('black');
   noFill();
   for(let i=0; i<rows; i++){
@@ -281,5 +305,21 @@ function main() {
       )
     }
   }
+}
+
+
+function main() {
+  grid=createGrid(rows,cols);
+  fill('black');
+  let quoteSects = ['quoteSect1','quoteSect2','quoteSect3'];
+  for (let i=0; i<quoteSects.length; i++){
+  
+  printQuote(quoteSects[i]);
+  }
+
+  printFooter(quoteAttrib, articleHeader, articleCopy);
+
+  // //view grid to test
+  // viewGrid();
 
 }
