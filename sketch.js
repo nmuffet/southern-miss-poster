@@ -308,6 +308,42 @@ function printFooter(attribution, header, copy) {
 }
 
 
+function printRects(color){
+  let totalCells = rows * cols;
+  let minCov = .1;
+  let maxCov = .8;
+  let surfaceCovTarget = setSurfaceCovTarget();
+  function setSurfaceCovTarget(){
+    let currentTarget = 0;
+    while(currentTarget<minCov | currentTarget > maxCov){
+      currentTarget = Math.random()
+    }
+    console.log(`surfaceCovTarget: ${currentTarget}`);
+  }
+  let surfaceCov = calculateCovered(grid);
+  console.log(`Total cells: ${totalCells}`);
+  console.log(`surfaceCov`);
+  console.log(surfaceCov);
+
+
+  
+}
+function calculateCovered(targetGrid){
+  let rows = targetGrid.length;
+  let cols = targetGrid[0].length;
+  let totalCells = rows*cols;
+  let filledCells = 0;
+  for(let i=0; i<rows;i++){
+    for(let j=0; j<cols; j++){
+      if(grid[i][j].filled){
+        filledCells+=1;
+      }
+    }
+  }
+
+  return{cells: filledCells, percent: (filledCells/totalCells)}
+}
+
 function main() {
   grid=createGrid(rows,cols);
   fill('black');
@@ -315,11 +351,12 @@ function main() {
   for (let i=0; i<quoteSects.length; i++){
   
   printQuote(quoteSects[i]);
+  printRects('pink');
   }
 
   printFooter(quoteAttrib, articleHeader, articleCopy);
 
   // //view grid to test
-  // viewGrid();
+  viewGrid();
 
 }
