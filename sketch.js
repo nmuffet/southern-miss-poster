@@ -309,6 +309,8 @@ function printFooter(attribution, header, copy) {
 
 
 function printRects(color){
+  push();
+  let colors = [color,grey50];
   let totalCells = rows * cols;
   let minCov = .1;
   let maxCov = .8;
@@ -321,12 +323,27 @@ function printRects(color){
     console.log(`surfaceCovTarget: ${currentTarget}`);
   }
   let surfaceCov = calculateCovered(grid);
+  let minW = 0;
+  let maxW = cols;
+  let minH = 0;
+  let maxH = rows;
   console.log(`Total cells: ${totalCells}`);
   console.log(`surfaceCov`);
   console.log(surfaceCov);
 
+  while (surfaceCov<surfaceCovTarget){
+    surfaceCovTarget = setSurfaceCovTarget();
 
-  
+    //getrandomstart
+    //getrandomW
+    // getRandomH
+    // setfill
+
+    rect()
+// updateCells();
+
+  } 
+  pop();
 }
 function calculateCovered(targetGrid){
   let rows = targetGrid.length;
@@ -342,6 +359,30 @@ function calculateCovered(targetGrid){
   }
 
   return{cells: filledCells, percent: (filledCells/totalCells)}
+}
+
+function updateCells(rowStart,colStart,w,h,targetGrid){
+  let wMax = targetGrid[0].length;
+  let hMax = targetGrid.length;
+  let endW = ()=>{if((colStart+w)<wMax){
+    return colStart+w
+  } else{return wMax}};
+  let endH = ()=>{if((rowStart+h)<hMax){
+    return rowStart+h
+  } else{return hMax}}
+
+  for(let i = rowStart; i<endH; i++){
+    for(let j= colStart; j<endW; j++){
+      targetGrid[i][j].filled=true;
+    }
+  }
+
+}
+
+function randomRect(minW,maxW,minH,maxH,targetGrid){
+  let grid = targetGrid;
+  
+
 }
 
 function main() {
