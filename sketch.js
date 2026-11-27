@@ -309,11 +309,22 @@ function printFooter(attribution, header, copy) {
 
 
 function printRects(color){
+  let minW = 2;
+  let maxW = cols;
+  let minH = 2;
+  let maxH = rows;
+  if (!Number.isInteger(minW) || !Number.isInteger(maxW) ||
+      !Number.isInteger(minH) || !Number.isInteger(maxH) ||
+      minW < 1 || minW > maxW || maxW > cols ||
+      minH < 1 || minH > maxH || maxH > rows) {
+    throw new Error('Rectangle size limits must be whole cells within the grid');
+  }
   push();
-  let colors = [color,grey50];
+  noStroke();
+  let colors = [color,color,grey50];
   let totalCells = rows * cols;
-  let minCov = .1;
-  let maxCov = .8;
+  let minCov = .5;
+  let maxCov = .9;
   let surfaceCovTarget = setSurfaceCovTarget();
   function setSurfaceCovTarget(){
     let currentTarget = 0;
@@ -321,27 +332,27 @@ function printRects(color){
       currentTarget = Math.random()
     }
     console.log(`surfaceCovTarget: ${currentTarget}`);
+    return currentTarget;
   }
   let surfaceCov = calculateCovered(grid);
-  let minW = 0;
-  let maxW = cols;
-  let minH = 0;
-  let maxH = rows;
   console.log(`Total cells: ${totalCells}`);
   console.log(`surfaceCov`);
   console.log(surfaceCov);
 
-  while (surfaceCov<surfaceCovTarget){
-    surfaceCovTarget = setSurfaceCovTarget();
+  while (surfaceCov.percent<surfaceCovTarget){
 
-    //getrandomstart
-    //getrandomW
-    // getRandomH
-    // setfill
+    let startR= Math.floor(Math.random()*(rows-minH+1));
+    let startC = Math.floor(Math.random()*(cols-minW+1));
+    let w = minW + Math.floor(Math.random()*(Math.min(maxW, cols-startC)-minW+1));
+    let h = minH + Math.floor(Math.random()*(Math.min(maxH, rows-startR)-minH+1));
+    let fillC = colors[Math.floor(Math.random()*colors.length)];
+    fill(fillC);
 
-    rect()
-// updateCells();
-
+    let [x, y] = grid[startR][startC].cellTL;
+    let [right, bottom] = grid[startR+h-1][startC+w-1].cellBR;
+    rect(x-gap, y-gap, right-x+gap*2, bottom-y+gap*2);
+    updateCells(startR, startC, w, h, grid);
+    surfaceCov = calculateCovered(grid);
   } 
   pop();
 }
@@ -352,7 +363,7 @@ function calculateCovered(targetGrid){
   let filledCells = 0;
   for(let i=0; i<rows;i++){
     for(let j=0; j<cols; j++){
-      if(grid[i][j].filled){
+      if(targetGrid[i][j].filled){
         filledCells+=1;
       }
     }
@@ -364,12 +375,8 @@ function calculateCovered(targetGrid){
 function updateCells(rowStart,colStart,w,h,targetGrid){
   let wMax = targetGrid[0].length;
   let hMax = targetGrid.length;
-  let endW = ()=>{if((colStart+w)<wMax){
-    return colStart+w
-  } else{return wMax}};
-  let endH = ()=>{if((rowStart+h)<hMax){
-    return rowStart+h
-  } else{return hMax}}
+  let endW = (colStart+w)<wMax ? colStart+w : wMax;
+  let endH = (rowStart+h)<hMax ? rowStart+h : hMax;
 
   for(let i = rowStart; i<endH; i++){
     for(let j= colStart; j<endW; j++){
@@ -379,25 +386,19 @@ function updateCells(rowStart,colStart,w,h,targetGrid){
 
 }
 
-function randomRect(minW,maxW,minH,maxH,targetGrid){
-  let grid = targetGrid;
-  
-
-}
 
 function main() {
   grid=createGrid(rows,cols);
   fill('black');
+  printRects('pink');
   let quoteSects = ['quoteSect1','quoteSect2','quoteSect3'];
   for (let i=0; i<quoteSects.length; i++){
-  
-  printQuote(quoteSects[i]);
-  printRects('pink');
+    printQuote(quoteSects[i]);
   }
 
   printFooter(quoteAttrib, articleHeader, articleCopy);
 
   // //view grid to test
-  viewGrid();
+  // viewGrid();
 
 }
