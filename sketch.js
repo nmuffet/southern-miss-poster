@@ -26,7 +26,7 @@ let quoteh1Percent=.1;
 
 let uniSum= null;
 let grey50 = '#D9D9D9';
-let accentColor = 'orange';
+let accentColor = 'deepskyblue';
 //accent color should be determined by dividing stringUniCycle by 360 (color wheel) and then flooring the result. Resulting color should be used at full saturation and brightness.
 
 let canvasWidth = 764;
@@ -46,7 +46,8 @@ h3: {font:['bold','regular'],size:60, letterspacing: -3}, //bold or reg weight, 
 h4: {font:['bold','regular'],size:30, letterspacing: -1}, //bold or reg weight, -1 letterspacing
 h4a: {font:['regular'],size:30, letterspacing: -1}, //bold or reg weight, -1 letterspacing
 h5:{font:'bold',size:18, letterspacing: 0}, //bold weight
-h6: {font:'regular',size:12, letterspacing: 0}
+h6: {font:'regular',size:12, letterspacing: 0},
+h7: {font:'regular',size:8.5, letterspacing: 0}
 }
 
 function resolveTypeSpecs(h){
@@ -78,7 +79,9 @@ quoteSect3:{rows:[8,9,10,11],text:[["indifference"],['indiff','erence'],['in','d
 };
 let quoteAttrib={rows:[12,13],text:["—Marshall McLuhan"],sizes:['h4a']}; //always h4 and in bottom 2 rows
 let articleHeader="Article 12"; //always h5 and directly above articleCopy in bottom two rows
-let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation."; //always h6 3 cols wide and in bottom two rows
+let articleCopy="No one shall be subjected to arbitrary or unlawful interference with his privacy, family, home or correspondence, nor to unlawful attacks on his honour and reputation.";//always h6 3 cols wide and in bottom two rows
+
+let cta = "See your unique poster at nickmuffet.com/surveillance";
 
 
 /*SHAPES
@@ -123,7 +126,7 @@ function setup() {
 }
 
 function draw() {
-  background(220);
+  background(260);
   main();
   noLoop()
 }
@@ -260,7 +263,7 @@ function printQuote(quote){
   }
 }
 
-function printFooter(attribution, header, copy) {
+function printFooter(attribution, header, copy, cta) {
   const attributionCol = Math.random() < 0.5 ? 0 : cols / 2;
   const articleCol = attributionCol === 0 ? cols / 2 : 0;
   const row = attribution.rows[0];
@@ -287,6 +290,14 @@ function printFooter(attribution, header, copy) {
   textSize(copyStyle.size);
   textLeading(copyStyle.size * 1.25);
   text(copy, x, y-(cellH*.1) + articleStyle.size * 1.25, 3 * cellW + 2 * gap);
+
+
+  const ctaStyle = resolveTypeSpecs('h7');
+  textAlign(LEFT, BOTTOM);
+  textFont(loadedFonts[ctaStyle.font]);
+  textSize(ctaStyle.size);
+  text(cta,x, grid[row+1][articleCol].cellBL[1]);
+
   pop();
 }
 
@@ -390,13 +401,13 @@ function updateCells(rowStart,colStart,w,h,targetGrid){
 function main() {
   grid=createGrid(rows,cols);
   fill('black');
-  printRects('pink');
+  printRects(accentColor);
   let quoteSects = ['quoteSect1','quoteSect2','quoteSect3'];
   for (let i=0; i<quoteSects.length; i++){
     printQuote(quoteSects[i]);
   }
 
-  printFooter(quoteAttrib, articleHeader, articleCopy);
+  printFooter(quoteAttrib, articleHeader, articleCopy, cta);
 
   // //view grid to test
   // viewGrid();
